@@ -73,6 +73,27 @@ export function generatePayFastSignature(
   return createHash("md5").update(paramString).digest("hex");
 }
 
+/** Checkout signatures use attribute order. ITN signatures use posted field order. */
+export function verifyPayFastItnSignature(
+  data: Record<string, string>,
+  passphrase?: string | null,
+) {
+  const received = data.signature;
+  if (!received) return false;
+
+  const parts: string[] = [];
+  for (const [key, val] of Object.entries(data)) {
+    if (key === "signature") continue;
+    if (val === undefined || val === "") continue;
+    parts.push(`${key}=${pfEncode(val)}`);
+  }
+  let paramString = parts.join("&");
+  if (passphrase) {
+    paramString += `&passphrase=${pfEncode(passphrase)}`;
+  }
+  return createHash("md5").update(paramString).digest("hex") === received;
+}
+
 export function verifyPayFastSignature(
   data: Record<string, string>,
   passphrase?: string | null,

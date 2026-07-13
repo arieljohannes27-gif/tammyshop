@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import {
   isPayFastConfigured,
   validatePayFastItn,
-  verifyPayFastSignature,
+  verifyPayFastItnSignature,
 } from "@/lib/payfast";
 import { writeAuditLog } from "@/services/audit.service";
 
@@ -25,8 +25,11 @@ export async function POST(req: Request) {
     const data = formToRecord(await req.formData());
     const passphrase = process.env.PAYFAST_PASSPHRASE;
 
-    if (!verifyPayFastSignature(data, passphrase)) {
-      console.error("PayFast ITN signature mismatch");
+    if (!verifyPayFastItnSignature(data, passphrase)) {
+      console.error("PayFast ITN signature mismatch", {
+        keys: Object.keys(data),
+        payment_status: data.payment_status,
+      });
       return new NextResponse("Invalid signature", { status: 400 });
     }
 
