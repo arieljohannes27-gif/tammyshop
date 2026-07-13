@@ -9,7 +9,7 @@ Production-ready inventory, POS, purchasing and analytics SaaS for spaza shops, 
 - Next.js 15 · React 19 · TypeScript · Tailwind CSS 4
 - Prisma · PostgreSQL (local Docker or Supabase)
 - Supabase-ready auth/client helpers
-- Stripe subscriptions (Starter R50 / Advanced R119)
+- PayFast subscriptions (Starter R50 / Advanced R119)
 - TanStack Query · Zustand · Framer Motion · Recharts
 
 ## Quick start
@@ -64,11 +64,10 @@ Also seeded: `manager@tammyshop.co.za` and `staff@tammyshop.co.za` (same passwor
 
 Set in `.env`:
 
-- `STRIPE_SECRET_KEY`
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_STARTER_PRICE_ID`
-- `STRIPE_ADVANCED_PRICE_ID`
+- `PAYFAST_MERCHANT_ID`
+- `PAYFAST_MERCHANT_KEY`
+- `PAYFAST_PASSPHRASE`
+- `PAYFAST_SANDBOX` (`true` for sandbox)
 
 Without keys, billing uses a safe simulated activation path for local development.
 
@@ -82,7 +81,7 @@ src/
   services/       # Domain services (analytics, inventory, audit)
   stores/         # Zustand stores (POS)
   types/          # Shared TypeScript contracts
-  lib/            # Auth, prisma, stripe, supabase, utils
+  lib/            # Auth, prisma, payfast, supabase, utils
 prisma/           # Schema + seed
 supabase/         # SQL migrations
 ```

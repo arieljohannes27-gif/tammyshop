@@ -9,54 +9,72 @@ function SuccessInner() {
   const params = useSearchParams();
   const plan = params.get("plan");
   const simulated = params.get("simulated");
-  const sessionId = params.get("session_id");
-  const [status, setStatus] = useState<"idle" | "confirming" | "ready" | "error">(
-    sessionId && !simulated ? "confirming" : "ready",
+  const [status, setStatus] = useState<"confirming" | "ready" | "error">(
+    simulated ? "ready" : "confirming",
   );
-  const [activePlan, setActivePlan] = useState(plan);
 
   useEffect(() => {
-    if (!sessionId || simulated) return;
+    if (simulated) return;
     let cancelled = false;
-    (async () => {
+    let tries = 0;
+
+    async function poll() {
+      tries += 1;
       try {
-        const res = await fetch("/api/billing/confirm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sessionId }),
-        });
-        const data = await res.json();
-        if (cancelled) return;
-        if (!res.ok) {
-          setStatus("error");
-          return;
+        const res = await fetch("/api/settings");
+        if (res.ok) {
+          const data = await res.json();
+          const paid =
+            data?.subscription?.status === "ACTIVE" &&
+            (data?.subscription?.plan === "STARTER" || data?.subscription?.plan === "ADVANCED");
+          if (paid) {
+            if (!cancelled) setStatus("ready");
+            return;
+          }
         }
-        setActivePlan(data.plan || plan);
-        setStatus("ready");
       } catch {
-        if (!cancelled) setStatus("error");
+        /* keep polling */
       }
-    })();
+      if (tries >= 12) {
+        if (!cancelled) setStatus("error");
+        return;
+      }
+      setTimeout(poll, 1500);
+    }
+
+    // Activate locally if returning from simulated / or wait for PayFast ITN
+    void fetch("/api/billing/confirm", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    }).finally(() => {
+      poll();
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [sessionId, simulated, plan]);
+  }, [plan, simulated]);
 
   return (
     <div className="gradient-hero flex min-h-dvh items-center justify-center px-4">
       <Card elevated className="w-full max-w-md text-center">
         <h1 className="text-2xl font-bold">
-          {status === "confirming" ? "Confirming payment…" : status === "error" ? "Payment received" : "Subscription activated"}
+          {status === "confirming"
+            ? "Confirming payment…"
+            : status === "error"
+              ? "Payment received"
+              : "Subscription activated"}
         </h1>
         <p className="mt-2 text-sm text-text-secondary">
           {status === "confirming"
-            ? "Unlocking your TammyShop account…"
+            ? "PayFast is confirming your payment — this usually takes a few seconds."
             : status === "error"
-              ? "If the dashboard is locked, wait a moment or contact support — Stripe may still be syncing."
-              : activePlan
-                ? `${activePlan} plan is now active`
+              ? "If the dashboard is still locked, wait a moment and refresh — PayFast may still be syncing."
+              : plan
+                ? `${plan} plan is now active`
                 : "Your TammyShop plan is ready."}
-          {simulated ? " (simulated Stripe checkout)" : ""}
+          {simulated ? " (demo / simulated checkout)" : ""}
         </p>
         <Link href="/dashboard">
           <Button className="mt-6 w-full" disabled={status === "confirming"}>

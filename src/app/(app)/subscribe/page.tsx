@@ -8,9 +8,25 @@ import { Check } from "lucide-react";
 import { Button, Card, Badge } from "@/components/ui";
 import { PRICING } from "@/types";
 
+function submitPayFastForm(action: string, fields: Record<string, string>) {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = action;
+  for (const [name, value] of Object.entries(fields)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = name;
+    input.value = value;
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
+}
+
 function SubscribeInner() {
   const params = useSearchParams();
   const preferred = (params.get("plan") as "STARTER" | "ADVANCED" | null) || "STARTER";
+  const cancelled = params.get("cancelled");
   const [busy, setBusy] = useState<"STARTER" | "ADVANCED" | null>(null);
 
   async function checkout(plan: "STARTER" | "ADVANCED") {
@@ -23,15 +39,21 @@ function SubscribeInner() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Checkout failed");
+
+      if (json.action && json.fields) {
+        submitPayFastForm(json.action, json.fields);
+        return;
+      }
+
       if (json.url) {
         window.location.href = json.url;
         return;
       }
+
       toast.success("Subscription activated");
       window.location.href = "/dashboard";
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Checkout failed");
-    } finally {
       setBusy(null);
     }
   }
@@ -47,6 +69,9 @@ function SubscribeInner() {
         <p className="mt-2 text-text-secondary">
           Your account is ready. Activate Starter or Advanced to unlock inventory, POS and reports.
         </p>
+        {cancelled ? (
+          <p className="mt-3 text-sm text-warning">Payment cancelled — choose a plan when you&apos;re ready.</p>
+        ) : null}
       </div>
 
       <div className="grid gap-5 md:grid-cols-2">
@@ -98,7 +123,7 @@ function SubscribeInner() {
       </div>
 
       <p className="mt-6 text-center text-xs text-text-muted">
-        Payments via Stripe when configured. Without Stripe keys, checkout activates the plan in demo mode so you can test the flow.
+        Secure payments via PayFast (South Africa). Without PayFast keys configured, checkout runs in demo mode.
       </p>
     </div>
   );

@@ -19,6 +19,21 @@ export default function BillingPage() {
     });
     const json = await res.json();
     if (!res.ok) return toast.error(json.error || "Checkout failed");
+    if (json.action && json.fields) {
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = json.action;
+      for (const [name, value] of Object.entries(json.fields as Record<string, string>)) {
+        const input = document.createElement("input");
+        input.type = "hidden";
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+      }
+      document.body.appendChild(form);
+      form.submit();
+      return;
+    }
     if (json.url) {
       window.location.href = json.url;
       return;
@@ -29,7 +44,7 @@ export default function BillingPage() {
 
   return (
     <div>
-      <PageHeader title="Billing" description="Stripe subscriptions for Starter and Advanced." />
+      <PageHeader title="Billing" description="PayFast subscriptions for Starter and Advanced." />
       <Card elevated className="mb-6">
         <p className="label-caps">Current plan</p>
         <p className="mt-2 text-3xl font-bold">{data?.subscription?.plan || "FREE"}</p>
