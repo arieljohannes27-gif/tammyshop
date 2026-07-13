@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 
 export async function GET() {
-  const session = await requireSession();
+  const session = await requirePaidSession();
   const notifications = await prisma.notification.findMany({
     where: {
       businessId: session.businessId,
@@ -16,7 +16,7 @@ export async function GET() {
 }
 
 export async function PATCH(req: Request) {
-  const session = await requireSession();
+  const session = await requirePaidSession();
   const body = await req.json();
   if (body.markAll) {
     await prisma.notification.updateMany({

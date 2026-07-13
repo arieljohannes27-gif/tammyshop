@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { getBusinessPlan, requireSession } from "@/lib/auth";
+import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
 import { getProductAnalytics, getSalesChart, getDashboardKpis } from "@/services/analytics.service";
 
 export async function GET() {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const plan = await getBusinessPlan(session.businessId);
     const [analytics, chart, kpis] = await Promise.all([
       getProductAnalytics(session.businessId),

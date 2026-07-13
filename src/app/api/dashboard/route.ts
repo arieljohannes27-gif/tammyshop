@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import {
   getDashboardKpis,
   getSalesChart,
@@ -10,7 +10,7 @@ import {
 
 export async function GET() {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const [kpis, salesChart, categories, analytics, activity] = await Promise.all([
       getDashboardKpis(session.businessId),
       getSalesChart(session.businessId, 14),
@@ -40,6 +40,9 @@ export async function GET() {
   } catch (e) {
     if (e instanceof Error && e.message === "UNAUTHORIZED") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (e instanceof Error && e.message === "PAYMENT_REQUIRED") {
+      return NextResponse.json({ error: "Payment required" }, { status: 402 });
     }
     console.error(e);
     return NextResponse.json({ error: "Failed to load dashboard" }, { status: 500 });

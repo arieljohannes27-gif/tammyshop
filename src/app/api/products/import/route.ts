@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSession, getBusinessPlan } from "@/lib/auth";
+import { requirePaidSession, getBusinessPlan } from "@/lib/auth";
 import { generateSku, parseRandToCents } from "@/lib/utils";
 import { writeAuditLog } from "@/services/audit.service";
 import { Decimal } from "@prisma/client/runtime/library";
@@ -19,7 +19,7 @@ const rowSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const body = await req.json();
     const rows = z.array(rowSchema).parse(body.rows || []);
     const plan = await getBusinessPlan(session.businessId);

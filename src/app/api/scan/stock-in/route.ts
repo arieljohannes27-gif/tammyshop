@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import { createStockMovement } from "@/services/inventory.service";
 import { generateSku } from "@/lib/utils";
 import { writeAuditLog } from "@/services/audit.service";
@@ -46,7 +46,7 @@ const stockInSchema = z.object({
 
 export async function GET(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const raw = new URL(req.url).searchParams.get("barcode")?.trim();
     if (!raw) return NextResponse.json({ error: "Barcode required" }, { status: 400 });
     const barcode = normalizeBarcode(raw);
@@ -78,7 +78,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const body = stockInSchema.parse(await req.json());
     const barcode = normalizeBarcode(body.barcode);
 

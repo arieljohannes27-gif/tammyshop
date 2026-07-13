@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import { writeAuditLog } from "@/services/audit.service";
 import { Decimal } from "@prisma/client/runtime/library";
 import { generateSku } from "@/lib/utils";
@@ -10,7 +10,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: Ctx) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const { id } = await ctx.params;
     const product = await prisma.product.findFirst({
       where: { id, businessId: session.businessId, deletedAt: null },
@@ -60,7 +60,7 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request, ctx: Ctx) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const { id } = await ctx.params;
     const body = patchSchema.parse(await req.json());
 
@@ -129,7 +129,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const { id } = await ctx.params;
     const existing = await prisma.product.findFirst({ where: { id, businessId: session.businessId } });
     if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });

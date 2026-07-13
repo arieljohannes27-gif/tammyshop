@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import { writeAuditLog } from "@/services/audit.service";
 
 export async function GET(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const q = new URL(req.url).searchParams.get("q")?.trim();
     const customers = await prisma.customer.findMany({
       where: {
@@ -32,7 +32,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const body = schema.parse(await req.json());
     const customer = await prisma.customer.create({
       data: {

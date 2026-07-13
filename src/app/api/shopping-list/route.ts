@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { getBusinessPlan, requireSession } from "@/lib/auth";
+import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
 import { generateShoppingList } from "@/services/analytics.service";
 import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const lists = await prisma.shoppingList.findMany({
       where: { businessId: session.businessId },
       include: { items: true },
@@ -20,7 +20,7 @@ export async function GET() {
 
 export async function POST() {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const plan = await getBusinessPlan(session.businessId);
     if (!plan.aiShoppingList) {
       return NextResponse.json({ error: "AI Shopping List requires Advanced plan" }, { status: 402 });

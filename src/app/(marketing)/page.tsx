@@ -190,7 +190,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
               <Link href="/register">
                 <Button size="lg" className="gradient-cta border-0">
-                  Start free <ArrowRight className="h-4 w-4" />
+                  Start for R50/mo <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <a href="#pricing">

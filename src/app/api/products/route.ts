@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getBusinessPlan, requireSession } from "@/lib/auth";
+import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
 import { generateSku } from "@/lib/utils";
 import { writeAuditLog } from "@/services/audit.service";
 import { Decimal } from "@prisma/client/runtime/library";
 
 export async function GET(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
     const includeArchived = searchParams.get("archived") === "1";
@@ -72,7 +72,7 @@ const createSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const body = createSchema.parse(await req.json());
     const plan = await getBusinessPlan(session.businessId);
 

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getBusinessPlan, requireSession } from "@/lib/auth";
+import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
 import { writeAuditLog } from "@/services/audit.service";
 
 export async function GET() {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const orders = await prisma.purchaseOrder.findMany({
       where: { businessId: session.businessId },
       include: { supplier: true, items: true },
@@ -31,7 +31,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const plan = await getBusinessPlan(session.businessId);
     if (!plan.purchaseOrders) return NextResponse.json({ error: "Purchase orders require Advanced plan" }, { status: 402 });
     const body = schema.parse(await req.json());

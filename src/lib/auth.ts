@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import type { SessionPayload, UserRole } from "@/types";
 import { PLAN_FEATURES, type PlanFeatures, type SubscriptionPlan } from "@/types";
+import { businessHasPaidAccess } from "@/lib/subscription";
 
 const COOKIE_NAME = "tammyshop_session";
 const IDLE_MINUTES = 60 * 8;
@@ -88,15 +89,24 @@ export function sessionExpiry(days = 30) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 }
 
+export async function requirePaidSession(): Promise<SessionPayload> {
+  const session = await requireSession();
+  const paid = await businessHasPaidAccess(session.businessId);
+  if (!paid) throw new Error("PAYMENT_REQUIRED");
+  return session;
+}
+
 export async function getBusinessPlan(businessId: string): Promise<PlanFeatures> {
   const sub = await prisma.subscription.findUnique({ where: { businessId } });
-  const plan = (sub?.plan ?? "FREE") as SubscriptionPlan;
-  const active =
-    !sub ||
-    sub.status === "ACTIVE" ||
-    sub.status === "TRIALING" ||
-    (plan === "FREE" && true);
-  if (!active && plan !== "FREE") return PLAN_FEATURES.FREE;
+  if (!sub) return PLAN_FEATURES.FREE;
+
+  const plan = sub.plan as SubscriptionPlan;
+  const paid =
+    (plan === "STARTER" || plan === "ADVANCED") &&
+    (sub.status === "ACTIVE" ||
+      (sub.status === "TRIALING" && (!sub.trialEndsAt || sub.trialEndsAt > new Date())));
+
+  if (!paid) return PLAN_FEATURES.FREE;
   return PLAN_FEATURES[plan] ?? PLAN_FEATURES.FREE;
 }
 

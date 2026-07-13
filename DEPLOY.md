@@ -1,65 +1,88 @@
-# Deploy TammyShop (live for everyone)
+# Deploy TammyShop (live + paid registrations)
 
-## What you get
-- Public HTTPS URL (e.g. `https://tammyshop.vercel.app`)
-- Hosted Postgres (Supabase)
-- Phone camera works without tunnels
-- Anyone can sign up and use the app
+People register freely → pay Starter (R50) or Advanced (R119) → then use the app.
 
-## 1. Create a free Supabase database (5 min)
+## 1. Supabase Postgres (required)
 
-1. Go to https://supabase.com → **New project**
-2. Name it `tammyshop`, set a strong DB password, choose a region close to SA (e.g. `eu-west-1` or `af-south-1` if available)
-3. Project Settings → **Database** → Connection string
+1. Open https://supabase.com → **New project** → name `tammyshop`
+2. Save the database password
+3. **Project Settings → Database → Connection string**
 4. Copy:
-   - **Transaction pooler** URI → `DATABASE_URL` (port **6543**, add `?pgbouncer=true`)
-   - **Session / direct** URI → `DIRECT_URL` (port **5432**)
+   - **Transaction pooler** (port **6543**) → `DATABASE_URL`  
+     Append `?pgbouncer=true` if missing
+   - **Direct / Session** (port **5432**) → `DIRECT_URL`
 
-## 2. Create a GitHub repo + first commit
+## 2. Stripe (required for real money)
 
-Tell the agent: **“commit and push TammyShop to GitHub”**  
-(or create an empty GitHub repo and share the URL).
+1. Open https://dashboard.stripe.com/register (or log in)
+2. Complete business details (South Africa / ZAR)
+3. **Developers → API keys** → copy:
+   - Publishable key → `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
+   - Secret key → `STRIPE_SECRET_KEY`
+4. **Product catalog → Add product** (repeat twice):
 
-## 3. Deploy on Vercel (5 min)
+| Product | Price | Billing | Env var |
+|---------|-------|---------|---------|
+| TammyShop Starter | R50.00 ZAR | Monthly recurring | `STRIPE_STARTER_PRICE_ID` (`price_…`) |
+| TammyShop Advanced | R119.00 ZAR | Monthly recurring | `STRIPE_ADVANCED_PRICE_ID` (`price_…`) |
 
-1. Go to https://vercel.com → **Add New Project** → Import the GitHub repo
-2. Framework: **Next.js** (auto-detected)
-3. Add environment variables:
+5. After the site is live, **Developers → Webhooks → Add endpoint**:
+   - URL: `https://YOUR-DOMAIN/api/billing/webhook`
+   - Events: `checkout.session.completed`, `customer.subscription.deleted`
+   - Copy signing secret → `STRIPE_WEBHOOK_SECRET`
+
+Use **Test mode** first (card `4242 4242 4242 4242`). Switch to Live keys when ready for real payments.
+
+## 3. Push code to GitHub
+
+Repo: https://github.com/arieljohannes27-gif/tammyshop
+
+## 4. Deploy on Vercel
+
+1. https://vercel.com → **Add New Project** → import `tammyshop`
+2. Framework: **Next.js**
+3. Environment variables:
 
 | Name | Value |
 |------|--------|
 | `DATABASE_URL` | Supabase pooler URI + `?pgbouncer=true` |
 | `DIRECT_URL` | Supabase direct URI |
-| `JWT_SECRET` | Long random string (e.g. from `openssl rand -hex 32`) |
-| `NEXT_PUBLIC_APP_URL` | Your Vercel URL after first deploy (update once) |
+| `JWT_SECRET` | Long random hex (e.g. `openssl rand -hex 32`) |
+| `NEXT_PUBLIC_APP_URL` | Your Vercel URL (set after first deploy) |
 | `NEXT_PUBLIC_APP_NAME` | `TammyShop` |
+| `STRIPE_SECRET_KEY` | Stripe secret key |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
+| `STRIPE_STARTER_PRICE_ID` | `price_…` for R50 |
+| `STRIPE_ADVANCED_PRICE_ID` | `price_…` for R119 |
+| `STRIPE_WEBHOOK_SECRET` | From webhook (after URL exists) |
 
-4. Click **Deploy**
-5. After deploy succeeds, set `NEXT_PUBLIC_APP_URL` to the real `https://….vercel.app` URL and redeploy
+4. **Deploy**
+5. Set `NEXT_PUBLIC_APP_URL` to `https://….vercel.app` and redeploy
+6. Add the Stripe webhook (step 2.5) pointing at that URL
 
-## 4. Seed demo data (optional)
+## 5. Create production database tables
 
-On your Mac, with production `DATABASE_URL` / `DIRECT_URL` in `.env`:
+With production URLs in a local `.env.production.local` (or temporarily in `.env`):
 
 ```bash
 npx prisma db push
+# optional demo shop:
 npm run db:seed
 ```
 
-Or register a new owner account on the live site.
+Or skip seed and let real customers register + pay.
 
-## 5. Custom domain (optional)
+## 6. Smoke test
 
-Vercel → Project → **Domains** → add `tammyshop.co.za` (or any domain you own).
-
-## 6. Stripe (optional, for real payments)
-
-Add live Stripe keys + price IDs in Vercel env. Without them, billing stays in safe “simulated” mode.
+1. Open the live site → **Register** (new email)
+2. Choose Starter or Advanced → pay with Stripe test card
+3. Confirm you land in the dashboard
+4. Log out → try accessing `/dashboard` without paying (should hit `/subscribe`)
 
 ---
 
-### Security checklist
-- [ ] Strong `JWT_SECRET`
-- [ ] Never commit `.env`
-- [ ] Supabase password stored only in Vercel env
-- [ ] HTTPS only (Vercel default)
+### Security
+- Never commit `.env`
+- Strong `JWT_SECRET` in production
+- Prefer Stripe **Live** keys only after testing
+- HTTPS only (Vercel default)

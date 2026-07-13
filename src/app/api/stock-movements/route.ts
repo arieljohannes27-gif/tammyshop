@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import { createStockMovement } from "@/services/inventory.service";
 
 export async function GET(req: Request) {
-  const session = await requireSession();
+  const session = await requirePaidSession();
   const limit = Number(new URL(req.url).searchParams.get("limit") || 100);
   const movements = await prisma.stockMovement.findMany({
     where: { businessId: session.businessId },
@@ -33,7 +33,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const body = schema.parse(await req.json());
     const signed =
       body.type === "STOCK_OUT" || body.type === "DAMAGED"

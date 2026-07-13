@@ -13,7 +13,7 @@ const schema = z.object({
   email: z.string().email(),
   phone: z.string().optional(),
   password: z.string().min(8),
-  plan: z.enum(["FREE", "STARTER", "ADVANCED"]).optional(),
+  plan: z.enum(["STARTER", "ADVANCED"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
 
     const passwordHash = await bcrypt.hash(body.password, 12);
     const verifyToken = randomBytes(24).toString("hex");
-    const plan = body.plan && body.plan !== "FREE" ? body.plan : "FREE";
+    const plan = "FREE";
 
     const result = await prisma.$transaction(async (tx) => {
       const business = await tx.business.create({
@@ -44,11 +44,12 @@ export async function POST(req: Request) {
           settings: { create: {} },
           subscription: {
             create: {
+              // Unpaid until Stripe checkout completes — app is locked behind /subscribe
               plan,
-              status: plan === "FREE" ? "TRIALING" : "TRIALING",
-              trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-              currentPeriodStart: new Date(),
-              currentPeriodEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+              status: "EXPIRED",
+              trialEndsAt: null,
+              currentPeriodStart: null,
+              currentPeriodEnd: null,
             },
           },
         },
@@ -118,7 +119,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       user: payload,
       verifyToken,
-      message: "Account created. Check email to verify (dev token returned).",
+      preferredPlan: body.plan || "STARTER",
+      message: "Account created. Choose a paid plan to start using TammyShop.",
     });
   } catch (e) {
     if (e instanceof z.ZodError) {

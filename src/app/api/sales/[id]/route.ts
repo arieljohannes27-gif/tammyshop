@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: Ctx) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const { id } = await ctx.params;
     const sale = await prisma.sale.findFirst({
       where: { id, businessId: session.businessId },

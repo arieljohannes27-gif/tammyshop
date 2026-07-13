@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireOwnerOrManager } from "@/lib/auth";
+import { businessHasPaidAccess } from "@/lib/subscription";
 import { createStockMovement } from "@/services/inventory.service";
 import { writeAuditLog } from "@/services/audit.service";
 
@@ -10,6 +11,9 @@ type Ctx = { params: Promise<{ id: string }> };
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const session = await requireOwnerOrManager();
+    if (!(await businessHasPaidAccess(session.businessId))) {
+      return NextResponse.json({ error: "Payment required" }, { status: 402 });
+    }
     const { id } = await ctx.params;
     const body = z.object({ full: z.boolean().default(true) }).parse(await req.json().catch(() => ({})));
     const sale = await prisma.sale.findFirst({ where: { id, businessId: session.businessId }, include: { items: true } });

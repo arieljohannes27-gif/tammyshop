@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { getBusinessPlan, requireSession } from "@/lib/auth";
+import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
 import { getProductAnalytics, getDashboardKpis } from "@/services/analytics.service";
 import { startOfMonth, subMonths } from "date-fns";
 
 export async function GET(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const plan = await getBusinessPlan(session.businessId);
     if (!plan.reports) return NextResponse.json({ error: "Reports require Starter or Advanced" }, { status: 402 });
 

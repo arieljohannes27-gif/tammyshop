@@ -15,7 +15,7 @@ function RegisterForm() {
     email: "",
     phone: "",
     password: "",
-    plan: (params.get("plan") as "FREE" | "STARTER" | "ADVANCED") || "FREE",
+    plan: (params.get("plan") as "STARTER" | "ADVANCED") || "STARTER",
   });
   const [loading, setLoading] = useState(false);
 
@@ -30,8 +30,9 @@ function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      toast.success("Account created");
-      router.replace("/dashboard");
+      toast.success("Account created — choose a plan to continue");
+      const plan = data.preferredPlan || form.plan || "STARTER";
+      router.replace(`/subscribe?plan=${plan}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
@@ -47,7 +48,7 @@ function RegisterForm() {
           <span className="text-xl font-bold">TammyShop</span>
         </Link>
         <h1 className="mt-4 text-2xl font-bold">Create your shop</h1>
-        <p className="mt-1 text-sm text-text-secondary">Start managing inventory in minutes</p>
+        <p className="mt-1 text-sm text-text-secondary">Create your account, then pay to unlock TammyShop</p>
       </div>
       <form onSubmit={onSubmit} className="grid gap-4 sm:grid-cols-2">
         <div className="sm:col-span-2">
@@ -89,20 +90,19 @@ function RegisterForm() {
           />
         </div>
         <div>
-          <Label>Plan</Label>
+          <Label>Preferred plan</Label>
           <Select
             className="mt-1.5"
             value={form.plan}
             onChange={(e) => setForm({ ...form, plan: e.target.value as typeof form.plan })}
           >
-            <option value="FREE">Free trial</option>
             <option value="STARTER">Starter — R50/mo</option>
             <option value="ADVANCED">Advanced — R119/mo</option>
           </Select>
         </div>
         <div className="sm:col-span-2">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Creating..." : "Create account"}
+            {loading ? "Creating..." : "Create account & continue to payment"}
           </Button>
         </div>
       </form>

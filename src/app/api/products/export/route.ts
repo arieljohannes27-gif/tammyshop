@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 
 export async function GET(req: Request) {
-  const session = await requireSession();
+  const session = await requirePaidSession();
   const format = new URL(req.url).searchParams.get("format") || "csv";
   const products = await prisma.product.findMany({
     where: { businessId: session.businessId, deletedAt: null },

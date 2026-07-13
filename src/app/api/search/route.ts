@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireSession } from "@/lib/auth";
+import { requirePaidSession } from "@/lib/auth";
 import type { GlobalSearchResult } from "@/types";
 
 export async function GET(req: Request) {
   try {
-    const session = await requireSession();
+    const session = await requirePaidSession();
     const q = new URL(req.url).searchParams.get("q")?.trim();
     if (!q) return NextResponse.json([]);
 
