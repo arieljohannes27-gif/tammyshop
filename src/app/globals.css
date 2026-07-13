@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #635bff;
+  --color-secondary: #4f46e5;
+  --color-accent: #00c2a8;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-border: #e2e8f0;
+  --color-text: #0f172a;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
+.dark {
+  --color-bg: #0b1220;
+  --color-surface: #111827;
+  --color-border: #1f2937;
+  --color-text: #f8fafc;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-elevated: 0 8px 30px rgba(0, 0, 0, 0.45);
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  body {
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+}
+
+@layer utilities {
+  .gradient-cta {
+    background: linear-gradient(135deg, #635bff 0%, #4f46e5 55%, #00c2a8 140%);
+  }
+
+  .gradient-hero {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 91, 255, 0.18), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 80% 0%, rgba(0, 194, 168, 0.14), transparent 50%),
+      linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  }
+
+  .dark .gradient-hero {
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 10%, rgba(99, 91, 255, 0.25), transparent 55%),
+      radial-gradient(ellipse 70% 50% at 80% 0%, rgba(0, 194, 168, 0.12), transparent 50%),
+      linear-gradient(180deg, #0b1220 0%, #111827 100%);
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
+  .dark .glass {
+    background: rgba(17, 24, 39, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .label-caps {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+}
