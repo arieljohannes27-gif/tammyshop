@@ -39,6 +39,7 @@ export async function POST(req: Request) {
       role: user.role,
       email: user.email,
       fullName: user.fullName,
+      isPlatformAdmin: user.isPlatformAdmin,
     };
 
     const token = await signSessionToken(payload, expiresAt);

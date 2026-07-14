@@ -25,7 +25,11 @@ function LoginForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
       toast.success("Welcome back");
-      router.replace(params.get("next") || "/dashboard");
+      if (data.user?.isPlatformAdmin) {
+        router.replace("/admin");
+      } else {
+        router.replace(params.get("next") || "/dashboard");
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Login failed");
     } finally {

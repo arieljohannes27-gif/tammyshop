@@ -41,10 +41,11 @@ export async function POST(req: Request) {
           slug,
           email,
           phone: body.phone,
+          approvalStatus: "PENDING",
           settings: { create: {} },
           subscription: {
             create: {
-              // Unpaid until Stripe checkout completes — app is locked behind /subscribe
+              // Unpaid until PayFast checkout — also requires admin approval
               plan,
               status: "EXPIRED",
               trialEndsAt: null,
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
       role: result.user.role,
       email: result.user.email,
       fullName: result.user.fullName,
+      isPlatformAdmin: false,
     };
 
     const token = await signSessionToken(payload, expiresAt);
@@ -120,7 +122,7 @@ export async function POST(req: Request) {
       user: payload,
       verifyToken,
       preferredPlan: body.plan || "STARTER",
-      message: "Account created. Choose a paid plan to start using TammyShop.",
+      message: "Account created. An admin must approve your shop, then you can pay to unlock TammyShop.",
     });
   } catch (e) {
     if (e instanceof z.ZodError) {

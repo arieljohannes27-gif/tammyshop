@@ -30,6 +30,7 @@ export interface SessionPayload {
   role: UserRole;
   email: string;
   fullName: string;
+  isPlatformAdmin?: boolean;
 }
 
 export interface PlanFeatures {

@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { prisma } from "./prisma";
 import type { SessionPayload, UserRole } from "@/types";
 import { PLAN_FEATURES, type PlanFeatures, type SubscriptionPlan } from "@/types";
-import { businessHasPaidAccess } from "@/lib/subscription";
+import { businessHasPaidAccess, businessIsApproved } from "@/lib/subscription";
 
 const COOKIE_NAME = "tammyshop_session";
 const IDLE_MINUTES = 60 * 8;
@@ -89,8 +89,17 @@ export function sessionExpiry(days = 30) {
   return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
 }
 
+export async function requirePlatformAdmin(): Promise<SessionPayload> {
+  const session = await requireSession();
+  if (!session.isPlatformAdmin) throw new Error("FORBIDDEN");
+  return session;
+}
+
 export async function requirePaidSession(): Promise<SessionPayload> {
   const session = await requireSession();
+  if (session.isPlatformAdmin) return session;
+  const approved = await businessIsApproved(session.businessId);
+  if (!approved) throw new Error("APPROVAL_REQUIRED");
   const paid = await businessHasPaidAccess(session.businessId);
   if (!paid) throw new Error("PAYMENT_REQUIRED");
   return session;

@@ -34,3 +34,11 @@ export async function businessHasPaidAccess(businessId: string): Promise<boolean
   const sub = await getSubscription(businessId);
   return hasPaidAccess(sub);
 }
+
+export async function businessIsApproved(businessId: string): Promise<boolean> {
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    select: { approvalStatus: true },
+  });
+  return business?.approvalStatus === "APPROVED";
+}

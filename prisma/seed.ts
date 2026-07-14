@@ -41,6 +41,8 @@ async function main() {
       province: "Gauteng",
       postalCode: "2001",
       vatNumber: "4123456789",
+      approvalStatus: "APPROVED",
+      approvedAt: new Date(),
       settings: { create: {} },
       subscription: {
         create: {
@@ -50,6 +52,38 @@ async function main() {
           currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         },
       },
+    },
+  });
+
+  const hq = await prisma.business.create({
+    data: {
+      name: "TammyShop HQ",
+      slug: "tammyshop-hq",
+      email: "admin@tammyshop.co.za",
+      approvalStatus: "APPROVED",
+      approvedAt: new Date(),
+      settings: { create: {} },
+      subscription: {
+        create: {
+          plan: "ADVANCED",
+          status: "ACTIVE",
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        },
+      },
+    },
+  });
+
+  const adminHash = await bcrypt.hash("AdminDemo2026!", 12);
+  await prisma.user.create({
+    data: {
+      businessId: hq.id,
+      email: "admin@tammyshop.co.za",
+      passwordHash: adminHash,
+      fullName: "Platform Admin",
+      role: "OWNER",
+      isPlatformAdmin: true,
+      emailVerified: true,
     },
   });
 

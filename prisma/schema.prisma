@@ -14,6 +14,12 @@ enum UserRole {
   EMPLOYEE
 }
 
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum SubscriptionPlan {
   FREE
   STARTER
@@ -105,6 +111,10 @@ model Business {
   language        String   @default("en")
   vatEnabled      Boolean  @default(true) @map("vat_enabled")
   vatRate         Decimal  @default(15) @map("vat_rate") @db.Decimal(5, 2)
+  approvalStatus  ApprovalStatus @default(PENDING) @map("approval_status")
+  approvedAt      DateTime? @map("approved_at")
+  approvedById    String?  @map("approved_by_id")
+  rejectionReason String?  @map("rejection_reason")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
@@ -137,6 +147,7 @@ model User {
   passwordHash   String    @map("password_hash")
   fullName       String    @map("full_name")
   role           UserRole  @default(EMPLOYEE)
+  isPlatformAdmin Boolean  @default(false) @map("is_platform_admin")
   avatarUrl      String?   @map("avatar_url")
   isActive       Boolean   @default(true) @map("is_active")
   emailVerified  Boolean   @default(false) @map("email_verified")

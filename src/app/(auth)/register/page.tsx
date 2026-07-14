@@ -30,9 +30,8 @@ function RegisterForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Registration failed");
-      toast.success("Account created — choose a plan to continue");
-      const plan = data.preferredPlan || form.plan || "STARTER";
-      router.replace(`/subscribe?plan=${plan}`);
+      toast.success("Account created — waiting for admin approval");
+      router.replace("/pending-approval");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Registration failed");
     } finally {
