@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 const ADMIN_EMAIL = "admin@tammyshop.co.za";
 const ADMIN_PASSWORD = "AdminDemo2026!";
 const DEMO_EMAIL = "demo@tammyshop.co.za";
-const DEMO_PASSWORD = "demo1234";
+const DEMO_PASSWORD = "Demo1234!";
 
 async function main() {
   // Migration: approve shops that already have an active paid plan

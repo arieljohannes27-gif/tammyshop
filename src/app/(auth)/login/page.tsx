@@ -9,8 +9,8 @@ import { Button, Card, Input, Label } from "@/components/ui";
 function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
-  const [email, setEmail] = useState("demo@tammyshop.co.za");
-  const [password, setPassword] = useState("demo1234");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
@@ -20,7 +20,7 @@ function LoginForm() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Login failed");
@@ -46,6 +46,14 @@ function LoginForm() {
         </Link>
         <h1 className="mt-4 text-2xl font-bold">Welcome back</h1>
         <p className="mt-1 text-sm text-text-secondary">Sign in to manage your shop</p>
+      </div>
+      <div className="mb-4 rounded-xl border border-border bg-bg/60 p-3 text-left text-xs text-text-secondary">
+        <p className="font-semibold text-text">Demo login</p>
+        <p className="mt-1">Email: <span className="font-mono text-text">demo@tammyshop.co.za</span></p>
+        <p>Password: <span className="font-mono text-text">Demo1234!</span></p>
+        <p className="mt-2 font-semibold text-text">Admin (approve shops)</p>
+        <p className="mt-1">Email: <span className="font-mono text-text">admin@tammyshop.co.za</span></p>
+        <p>Password: <span className="font-mono text-text">AdminDemo2026!</span></p>
       </div>
       <form onSubmit={onSubmit} className="space-y-4">
         <div>
