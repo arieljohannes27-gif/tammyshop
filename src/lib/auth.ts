@@ -105,6 +105,14 @@ export async function requirePaidSession(): Promise<SessionPayload> {
   return session;
 }
 
+/** Paid session + role permission (e.g. "sales", "inventory.view"). */
+export async function requirePaidPermission(action: string): Promise<SessionPayload> {
+  const session = await requirePaidSession();
+  if (session.isPlatformAdmin) return session;
+  if (!hasPermission(session.role, action)) throw new Error("FORBIDDEN");
+  return session;
+}
+
 export async function getBusinessPlan(businessId: string): Promise<PlanFeatures> {
   const sub = await prisma.subscription.findUnique({ where: { businessId } });
   if (!sub) return PLAN_FEATURES.FREE;
@@ -132,14 +140,35 @@ export function hasPermission(role: UserRole, action: string): boolean {
       "reports",
       "analytics",
       "shopping-list",
+      "settings",
       "settings.view",
       "notifications",
+      "stock",
     ],
-    EMPLOYEE: ["dashboard", "inventory.view", "sales", "customers.view", "notifications"],
+    EMPLOYEE: [
+      "dashboard",
+      "inventory.view",
+      "sales",
+      "customers.view",
+      "notifications",
+      "stock.view",
+    ],
   };
   const allowed = permissions[role] ?? [];
   if (allowed.includes("*")) return true;
-  return allowed.some((p) => action === p || action.startsWith(`${p}.`) || p.startsWith(action));
+  if (allowed.includes(action)) return true;
+  // Capability "inventory" grants "inventory.view", "inventory.create", etc.
+  return allowed.some((p) => action === p || action.startsWith(`${p}.`));
+}
+
+export function authErrorResponse(e: unknown) {
+  if (e instanceof Error) {
+    if (e.message === "UNAUTHORIZED") return { error: "Unauthorized", status: 401 as const };
+    if (e.message === "FORBIDDEN") return { error: "Forbidden", status: 403 as const };
+    if (e.message === "PAYMENT_REQUIRED") return { error: "Payment required", status: 402 as const };
+    if (e.message === "APPROVAL_REQUIRED") return { error: "Approval required", status: 403 as const };
+  }
+  return null;
 }
 
 export { COOKIE_NAME, IDLE_MINUTES };

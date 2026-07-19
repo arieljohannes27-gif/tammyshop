@@ -1,3 +1,7 @@
+/**
+ * Optional Supabase JS client helpers.
+ * Primary data access is Prisma → Postgres. Keep for future Storage/Realtime/RLS tooling.
+ */
 import { createClient } from "@supabase/supabase-js";
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

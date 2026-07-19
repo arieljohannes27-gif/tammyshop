@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
+import { authErrorResponse, getBusinessPlan, requirePaidPermission } from "@/lib/auth";
 import { generateSku } from "@/lib/utils";
 import { writeAuditLog } from "@/services/audit.service";
 import { Decimal } from "@prisma/client/runtime/library";
 
 export async function GET(req: Request) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("inventory.view");
     const { searchParams } = new URL(req.url);
     const q = searchParams.get("q")?.trim();
     const includeArchived = searchParams.get("archived") === "1";
@@ -41,9 +41,8 @@ export async function GET(req: Request) {
       })),
     });
   } catch (e) {
-    if (e instanceof Error && e.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
@@ -72,7 +71,7 @@ const createSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("inventory");
     const body = createSchema.parse(await req.json());
     const plan = await getBusinessPlan(session.businessId);
 
@@ -124,10 +123,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ product }, { status: 201 });
   } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
     if (e instanceof z.ZodError) return NextResponse.json({ error: e.errors[0]?.message }, { status: 400 });
-    if (e instanceof Error && e.message === "UNAUTHORIZED") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     console.error(e);
     return NextResponse.json({ error: "Failed to create product" }, { status: 500 });
   }

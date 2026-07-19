@@ -1,58 +1,44 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requireOwnerOrManager } from "@/lib/auth";
-import { businessHasPaidAccess } from "@/lib/subscription";
-import { createStockMovement } from "@/services/inventory.service";
-import { writeAuditLog } from "@/services/audit.service";
+import { authErrorResponse, requireOwnerOrManager } from "@/lib/auth";
+import { businessHasPaidAccess, businessIsApproved } from "@/lib/subscription";
+import { refundSale } from "@/services/sales.service";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: Ctx) {
   try {
     const session = await requireOwnerOrManager();
+    if (!(await businessIsApproved(session.businessId))) {
+      return NextResponse.json({ error: "Approval required" }, { status: 403 });
+    }
     if (!(await businessHasPaidAccess(session.businessId))) {
       return NextResponse.json({ error: "Payment required" }, { status: 402 });
     }
     const { id } = await ctx.params;
     const body = z.object({ full: z.boolean().default(true) }).parse(await req.json().catch(() => ({})));
-    const sale = await prisma.sale.findFirst({ where: { id, businessId: session.businessId }, include: { items: true } });
-    if (!sale) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    if (sale.status === "REFUNDED") return NextResponse.json({ error: "Already refunded" }, { status: 400 });
 
-    for (const item of sale.items) {
-      await createStockMovement({
-        businessId: session.businessId,
-        productId: item.productId,
-        type: "RETURN",
-        quantityDelta: Number(item.quantity),
-        unitCostCents: item.costPriceCents,
-        reference: `REFUND-${sale.invoiceNumber}`,
-        actorUserId: session.userId,
-      });
-    }
-
-    const updated = await prisma.sale.update({
-      where: { id },
-      data: {
-        status: "REFUNDED",
-        refundedCents: sale.totalCents,
-      },
-    });
-
-    await writeAuditLog({
+    const sale = await refundSale({
       businessId: session.businessId,
       userId: session.userId,
-      action: "REFUND",
-      entityType: "sale",
-      entityId: id,
-      summary: `Refunded ${sale.invoiceNumber}`,
-      metadata: { full: body.full },
+      saleId: id,
+      full: body.full,
     });
 
-    return NextResponse.json({ sale: updated });
+    return NextResponse.json({ sale });
   } catch (e) {
-    if (e instanceof Error && e.message === "FORBIDDEN") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    if (e instanceof Error && e.message === "NOT_FOUND") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
+    if (e instanceof Error && e.message === "ALREADY_REFUNDED") {
+      return NextResponse.json({ error: "Already refunded" }, { status: 400 });
+    }
+    if (e instanceof Error && e.message === "INSUFFICIENT_STOCK") {
+      return NextResponse.json({ error: "Stock update failed" }, { status: 400 });
+    }
+    console.error(e);
     return NextResponse.json({ error: "Refund failed" }, { status: 500 });
   }
 }

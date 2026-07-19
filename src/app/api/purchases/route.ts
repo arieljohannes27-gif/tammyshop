@@ -1,19 +1,21 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { getBusinessPlan, requirePaidSession } from "@/lib/auth";
+import { authErrorResponse, getBusinessPlan, requirePaidPermission } from "@/lib/auth";
 import { writeAuditLog } from "@/services/audit.service";
 
 export async function GET() {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("purchases");
     const orders = await prisma.purchaseOrder.findMany({
       where: { businessId: session.businessId },
       include: { supplier: true, items: true },
       orderBy: { createdAt: "desc" },
     });
     return NextResponse.json({ orders });
-  } catch {
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -31,7 +33,7 @@ const schema = z.object({
 
 export async function POST(req: Request) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("purchases");
     const plan = await getBusinessPlan(session.businessId);
     if (!plan.purchaseOrders) return NextResponse.json({ error: "Purchase orders require Advanced plan" }, { status: 402 });
     const body = schema.parse(await req.json());

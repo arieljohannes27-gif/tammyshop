@@ -20,7 +20,6 @@
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.9.0",
-    "@stripe/stripe-js": "^7.4.0",
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.50.2",
     "@tanstack/react-query": "^5.81.5",
@@ -43,7 +42,6 @@
     "react-hook-form": "^7.58.1",
     "recharts": "^3.0.2",
     "sonner": "^2.0.5",
-    "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.1",
     "xlsx": "^0.18.5",
     "zod": "^3.25.67",

@@ -9,14 +9,20 @@ const PUBLIC_PATHS = [
   "/forgot-password",
   "/reset-password",
   "/verify-email",
-  "/pricing",
   "/open-on-phone",
 ];
 
 const AUTH_ONLY = ["/login", "/register", "/forgot-password"];
 
 function getSecret() {
-  return new TextEncoder().encode(process.env.JWT_SECRET || "dev-secret");
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("JWT_SECRET is not set");
+    }
+    return new TextEncoder().encode("dev-secret");
+  }
+  return new TextEncoder().encode(secret);
 }
 
 export async function middleware(request: NextRequest) {
