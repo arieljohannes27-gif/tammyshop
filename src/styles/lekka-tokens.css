@@ -1,31 +1,31 @@
 /**
- * Lekka Stop Shop design tokens.
- * Scope under `.lekka` so TammyShop Admin keeps its own theme.
- * Source: Westridge shop exterior — red as accent on warm white.
+ * Lekka Stop Shop — quiet market system.
+ * Red is accent only. Cream / stone / charcoal carry the room.
  */
 
 .lekka {
-  --lekka-red: #d0122b;
-  --lekka-red-deep: #a30e22;
-  --lekka-red-soft: rgba(208, 18, 43, 0.08);
-  --lekka-gold: #d4a017;
-  --lekka-bg: #faf7f2;
+  --lekka-red: #c8102e;
+  --lekka-red-deep: #9e0c24;
+  --lekka-red-soft: rgba(200, 16, 46, 0.07);
+  --lekka-gold: #c4a35a;
+  --lekka-bg: #f7f3ec;
+  --lekka-bg-stone: #efe8dc;
   --lekka-surface: #ffffff;
-  --lekka-text: #1c1917;
-  --lekka-muted: #78716c;
-  --lekka-border: #e7e0d6;
-  --lekka-fresh: #3f6f4a;
-  --lekka-fresh-soft: rgba(63, 111, 74, 0.1);
+  --lekka-text: #1f1c1a;
+  --lekka-muted: #6f6860;
+  --lekka-border: #e5ddd0;
+  --lekka-fresh: #4a6b52;
+  --lekka-fresh-soft: rgba(74, 107, 82, 0.1);
 
-  --lekka-radius: 14px;
-  --lekka-radius-sm: 10px;
-  --lekka-radius-lg: 22px;
+  --lekka-radius: 12px;
+  --lekka-radius-sm: 8px;
+  --lekka-radius-lg: 20px;
 
-  --lekka-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 8px 24px rgba(28, 25, 23, 0.06);
-  --lekka-shadow-lg: 0 4px 8px rgba(28, 25, 23, 0.04), 0 20px 40px rgba(28, 25, 23, 0.08);
+  --lekka-shadow: 0 1px 2px rgba(31, 28, 26, 0.03), 0 10px 28px rgba(31, 28, 26, 0.04);
+  --lekka-shadow-lg: 0 2px 6px rgba(31, 28, 26, 0.04), 0 24px 48px rgba(31, 28, 26, 0.06);
 
   --lekka-ease: cubic-bezier(0.22, 1, 0.36, 1);
-  --lekka-duration: 200ms;
+  --lekka-duration: 180ms;
 
   --font-lekka-display: "Fraunces", "Iowan Old Style", Georgia, serif;
   --font-lekka-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
@@ -33,12 +33,29 @@
   background: var(--lekka-bg);
   color: var(--lekka-text);
   font-family: var(--font-lekka-sans);
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lekka *,
+  .lekka *::before,
+  .lekka *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 .lekka ::selection {
   background: var(--lekka-red-soft);
   color: var(--lekka-text);
+}
+
+.lekka-display {
+  font-family: var(--font-lekka-display), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 
 .lekka-btn-primary {
@@ -47,11 +64,11 @@
   justify-content: center;
   gap: 0.5rem;
   min-height: 48px;
-  padding: 0.75rem 1.5rem;
+  padding: 0.75rem 1.6rem;
   border-radius: 999px;
   background: var(--lekka-red);
   color: #fff;
-  font-weight: 600;
+  font-weight: 500;
   letter-spacing: 0.01em;
   transition: background var(--lekka-duration) var(--lekka-ease),
     transform var(--lekka-duration) var(--lekka-ease);
@@ -62,7 +79,27 @@
 }
 
 .lekka-btn-primary:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
+}
+
+.lekka-btn-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid var(--lekka-border);
+  background: var(--lekka-surface);
+  color: var(--lekka-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: border-color var(--lekka-duration) var(--lekka-ease),
+    background var(--lekka-duration) var(--lekka-ease);
+}
+
+.lekka-btn-quiet:hover {
+  border-color: var(--lekka-text);
 }
 
 .lekka-card {
@@ -73,7 +110,11 @@
 }
 
 .lekka-glass {
-  background: rgba(250, 247, 242, 0.78);
-  backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(231, 224, 214, 0.85);
+  background: rgba(247, 243, 236, 0.86);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(229, 221, 208, 0.9);
+}
+
+.lekka-band {
+  background: var(--lekka-bg-stone);
 }

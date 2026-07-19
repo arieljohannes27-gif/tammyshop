@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { formatCurrency } from "@/lib/utils";
+import { resolveProductImage } from "@/lib/lekka-collections";
 import { useLekkaCart } from "@/stores/lekka-cart";
 
 export type StoreProduct = {
@@ -18,50 +19,43 @@ export type StoreProduct = {
 export function ProductCard({ product, index = 0 }: { product: StoreProduct; index?: number }) {
   const addItem = useLekkaCart((s) => s.addItem);
   const inStock = product.quantityAvailable > 0;
+  const reduce = useReducedMotion();
+  const image = resolveProductImage(product.name, product.imageUrl);
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 12 }}
+      initial={reduce ? false : { opacity: 0, y: 8 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.35, delay: Math.min(index * 0.04, 0.24), ease: [0.22, 1, 0.36, 1] }}
-      className="lekka-card group flex flex-col overflow-hidden"
+      viewport={{ once: true, margin: "-24px" }}
+      transition={{ duration: 0.32, delay: reduce ? 0 : Math.min(index * 0.03, 0.15), ease: [0.22, 1, 0.36, 1] }}
+      className="group flex flex-col"
     >
-      <Link href={`/shop/products/${product.id}`} className="relative block aspect-[4/5] bg-[#f0ebe3]">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 25vw"
-            className="object-cover transition duration-500 group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#f0ebe3] to-[#e4dcd0]">
-            <span
-              className="text-5xl font-medium text-[var(--lekka-muted)]/40"
-              style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-            >
-              {product.name.charAt(0)}
-            </span>
-          </div>
-        )}
+      <Link
+        href={`/shop/products/${product.id}`}
+        className="relative mb-4 block aspect-[4/5] overflow-hidden rounded-[var(--lekka-radius)] bg-[var(--lekka-bg-stone)]"
+      >
+        <Image
+          src={image}
+          alt={product.name}
+          fill
+          sizes="(max-width: 640px) 50vw, 25vw"
+          className="object-cover transition duration-700 ease-out group-hover:scale-[1.015]"
+        />
       </Link>
 
-      <div className="flex flex-1 flex-col gap-3 p-4 sm:p-5">
-        <div className="min-h-[3.5rem]">
+      <div className="flex flex-1 flex-col gap-3 px-0.5">
+        <div>
           <Link href={`/shop/products/${product.id}`}>
-            <h3 className="text-[15px] font-semibold leading-snug text-[var(--lekka-text)] sm:text-base">
+            <h3 className="text-[15px] font-medium leading-snug text-[var(--lekka-text)] sm:text-base">
               {product.name}
             </h3>
           </Link>
-          {product.description && (
-            <p className="mt-1 line-clamp-2 text-sm text-[var(--lekka-muted)]">{product.description}</p>
-          )}
         </div>
 
-        <div className="mt-auto flex items-end justify-between gap-3">
-          <p className="text-lg font-semibold tracking-tight">{formatCurrency(product.sellPriceCents)}</p>
+        <div className="mt-auto flex items-center justify-between gap-3">
+          <p className="text-base tracking-tight text-[var(--lekka-text)]">
+            {formatCurrency(product.sellPriceCents)}
+          </p>
           <button
             type="button"
             disabled={!inStock}
@@ -70,12 +64,12 @@ export function ProductCard({ product, index = 0 }: { product: StoreProduct; ind
                 productId: product.id,
                 name: product.name,
                 unitPriceCents: product.sellPriceCents,
-                imageUrl: product.imageUrl,
+                imageUrl: image,
               })
             }
-            className="min-h-11 rounded-full bg-[var(--lekka-text)] px-4 text-sm font-semibold text-white transition hover:bg-[var(--lekka-red)] disabled:cursor-not-allowed disabled:opacity-40"
+            className="lekka-btn-quiet disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {inStock ? "Add" : "Sold out"}
+            {inStock ? "Add to bag" : "Sold out"}
           </button>
         </div>
       </div>

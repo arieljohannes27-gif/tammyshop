@@ -55,9 +55,7 @@ export function CheckoutForm() {
   if (!items.length) {
     return (
       <div className="lekka-card px-6 py-12 text-center">
-        <p style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }} className="text-2xl">
-          Your bag is empty
-        </p>
+        <p className="lekka-display text-2xl">Your bag is empty</p>
         <a href="/shop/products" className="lekka-btn-primary mt-6 inline-flex">
           Continue shopping
         </a>
@@ -68,14 +66,9 @@ export function CheckoutForm() {
   return (
     <form onSubmit={onSubmit} className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
       <div className="lekka-card space-y-5 p-5 sm:p-7">
-        <h2
-          className="text-2xl"
-          style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-        >
-          Your details
-        </h2>
-        <p className="text-sm text-[var(--lekka-muted)]">
-          Pay on collection for now — we confirm your order instantly and reserve stock.
+        <h2 className="lekka-display text-2xl">Your details</h2>
+        <p className="text-sm leading-relaxed text-[var(--lekka-muted)]">
+          Pay when you collect. We confirm instantly and hold your items at the counter.
         </p>
         <label className="block">
           <span className="text-sm font-medium">Name</span>
@@ -136,7 +129,7 @@ export function CheckoutForm() {
           <span>{formatCurrency(subtotalCents)}</span>
         </div>
         <button type="submit" disabled={loading} className="lekka-btn-primary w-full disabled:opacity-60">
-          {loading ? "Placing order…" : "Place order"}
+          {loading ? "Reserving your bag…" : "Reserve & collect"}
         </button>
       </div>
     </form>

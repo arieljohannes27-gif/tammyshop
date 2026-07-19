@@ -7,6 +7,8 @@ Customer-facing premium neighbourhood market at **`/shop`**, powered by Phase 2/
 - Language: `docs/LEKKA-STOP-SHOP-DESIGN.md`
 - Tokens: `src/styles/lekka-tokens.css` (scoped `.lekka`)
 - Hero: `public/brand/lekka-stop-shop-hero.png`
+- Editorial aisles: `src/lib/lekka-collections.ts` (Fresh / Braai / Bakery / Farm / Essentials)
+- Post-audit redesign: daylight hero, collection-led home, lifestyle stills (no letter placeholders), quieter type
 
 ## Routes
 

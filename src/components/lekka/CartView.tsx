@@ -14,15 +14,10 @@ export function CartView() {
   if (!items.length) {
     return (
       <div className="lekka-card px-6 py-16 text-center">
-        <p
-          className="text-3xl"
-          style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-        >
-          Nothing in your bag yet
-        </p>
-        <p className="mt-2 text-[var(--lekka-muted)]">Browse the market and add a few favourites.</p>
+        <p className="lekka-display text-3xl">Your bag is empty</p>
+        <p className="mt-2 text-[var(--lekka-muted)]">Wander the aisles — something good is waiting.</p>
         <Link href="/shop/products" className="lekka-btn-primary mt-8 inline-flex">
-          Shop the market
+          Enter the market
         </Link>
       </div>
     );
@@ -90,9 +85,9 @@ export function CartView() {
           <span>Subtotal</span>
           <span>{formatCurrency(subtotalCents)}</span>
         </div>
-        <p className="text-sm text-[var(--lekka-muted)]">Collection · pay at the shop</p>
+        <p className="text-sm text-[var(--lekka-muted)]">Collect from the shop · pay then</p>
         <Link href="/shop/checkout" className="lekka-btn-primary w-full">
-          Checkout
+          Continue to collect
         </Link>
         <Link
           href="/shop/products"

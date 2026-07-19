@@ -15,18 +15,11 @@ export default async function LekkaOrderPage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-xl px-5 pb-20 pt-28 sm:px-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[var(--lekka-fresh)]">
-        Order confirmed
-      </p>
-      <h1
-        className="mt-3 text-4xl"
-        style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-      >
-        Thank you
-      </h1>
+      <p className="text-sm font-medium text-[var(--lekka-fresh)]">Reserved for you</p>
+      <h1 className="lekka-display mt-3 text-4xl">See you at the shop</h1>
       <p className="mt-3 text-[var(--lekka-muted)]">
-        Your order <span className="font-semibold text-[var(--lekka-text)]">{view.orderNumber}</span>{" "}
-        is reserved. Collect from the shop and pay on collection.
+        Order <span className="font-medium text-[var(--lekka-text)]">{view.orderNumber}</span> is
+        waiting at Lekka Stop Shop. Collect when you’re ready — pay at the counter.
       </p>
 
       <div className="lekka-card mt-10 space-y-4 p-6">

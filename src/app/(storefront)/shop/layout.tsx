@@ -21,7 +21,8 @@ export const metadata: Metadata = {
     default: "Lekka Stop Shop",
     template: "%s · Lekka Stop Shop",
   },
-  description: "Premium neighbourhood market shopping in Westridge — calm, trusted, easy.",
+  description:
+    "Lekka Stop Shop — a premium neighbourhood market in Westridge. Fresh, fair, ready to collect.",
 };
 
 export default function LekkaShopLayout({ children }: { children: React.ReactNode }) {

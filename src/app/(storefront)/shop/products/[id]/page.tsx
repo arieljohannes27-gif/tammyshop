@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToCartButton } from "@/components/lekka/AddToCartButton";
+import { resolveProductImage } from "@/lib/lekka-collections";
 import { formatCurrency } from "@/lib/utils";
 import { getStorefrontBusiness } from "@/lib/storefront";
 import { getProduct } from "@/services/catalog.service";
@@ -15,50 +16,35 @@ export default async function LekkaProductPage({ params }: Props) {
   if (!product || !product.isActive || product.isArchived) notFound();
 
   const inStock = Number(product.quantity) > 0;
+  const image = resolveProductImage(product.name, product.imageUrl);
 
   return (
-    <div className="mx-auto grid max-w-6xl gap-10 px-5 pb-20 pt-28 sm:px-8 lg:grid-cols-2 lg:gap-16">
-      <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--lekka-radius-lg)] bg-[#f0ebe3]">
-        {product.imageUrl ? (
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            fill
-            priority
-            sizes="(max-width: 1024px) 100vw, 50vw"
-            className="object-cover"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center">
-            <span
-              className="text-8xl text-[var(--lekka-muted)]/35"
-              style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-            >
-              {product.name.charAt(0)}
-            </span>
-          </div>
-        )}
+    <div className="mx-auto grid max-w-6xl gap-10 px-5 pb-24 pt-28 sm:px-8 lg:grid-cols-2 lg:gap-20">
+      <div className="relative aspect-[4/5] overflow-hidden rounded-[var(--lekka-radius-lg)] bg-[var(--lekka-bg-stone)]">
+        <Image
+          src={image}
+          alt={product.name}
+          fill
+          priority
+          sizes="(max-width: 1024px) 100vw, 50vw"
+          className="object-cover"
+        />
       </div>
 
       <div className="flex flex-col justify-center">
         <Link
           href="/shop/products"
-          className="mb-6 text-sm font-medium text-[var(--lekka-muted)] hover:text-[var(--lekka-text)]"
+          className="mb-8 text-sm text-[var(--lekka-muted)] hover:text-[var(--lekka-text)]"
         >
-          ← Back to market
+          Back to the market
         </Link>
         {product.category && (
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[var(--lekka-fresh)]">
-            {product.category.name}
-          </p>
+          <p className="text-sm font-medium text-[var(--lekka-fresh)]">{product.category.name}</p>
         )}
-        <h1
-          className="mt-2 text-4xl leading-tight text-[var(--lekka-text)] sm:text-5xl"
-          style={{ fontFamily: "var(--font-lekka-display), Georgia, serif" }}
-        >
+        <h1 className="lekka-display mt-2 text-4xl leading-tight text-[var(--lekka-text)] sm:text-5xl">
           {product.name}
         </h1>
-        <p className="mt-5 text-3xl font-semibold tracking-tight">
+        <p className="mt-5 text-2xl tracking-tight text-[var(--lekka-text)]">
           {formatCurrency(product.sellPriceCents)}
         </p>
         {product.description && (
@@ -71,12 +57,14 @@ export default async function LekkaProductPage({ params }: Props) {
             productId={product.id}
             name={product.name}
             unitPriceCents={product.sellPriceCents}
-            imageUrl={product.imageUrl}
+            imageUrl={image}
             disabled={!inStock}
           />
         </div>
         <p className="mt-4 text-sm text-[var(--lekka-muted)]">
-          {inStock ? "In stock · collect from the shop" : "Currently unavailable"}
+          {inStock
+            ? "Ready at the shop — pay when you collect."
+            : "Currently unavailable — check back soon."}
         </p>
       </div>
     </div>
