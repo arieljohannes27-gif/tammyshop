@@ -93,6 +93,21 @@ enum AuditAction {
   BILLING
 }
 
+enum OrderChannel {
+  ONLINE
+  POS
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  FULFILLING
+  COMPLETED
+  CANCELLED
+  REFUNDED
+}
+
 model Business {
   id              String   @id @default(uuid())
   name            String
@@ -117,6 +132,8 @@ model Business {
   rejectionReason String?  @map("rejection_reason")
   /// Next POS invoice sequence value (incremented atomically per sale)
   nextInvoiceNumber Int     @default(0) @map("next_invoice_number")
+  /// Next online commerce order number sequence
+  nextOrderNumber   Int     @default(0) @map("next_order_number")
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
@@ -130,6 +147,8 @@ model Business {
   suppliers       Supplier[]
   customers       Customer[]
   sales           Sale[]
+  orders          Order[]
+  apiKeys         ApiKey[]
   purchaseOrders  PurchaseOrder[]
   stockMovements  StockMovement[]
   notifications   Notification[]
@@ -291,6 +310,7 @@ model Product {
   unit            Unit?     @relation(fields: [unitId], references: [id])
   supplier        Supplier? @relation(fields: [supplierId], references: [id])
   saleItems       SaleItem[]
+  orderItems      OrderItem[]
   purchaseItems   PurchaseItem[]
   stockMovements  StockMovement[]
   shoppingListItems ShoppingListItem[]
@@ -344,9 +364,81 @@ model Customer {
 
   business        Business  @relation(fields: [businessId], references: [id])
   sales           Sale[]
+  orders          Order[]
 
   @@index([businessId])
   @@map("customers")
+}
+
+/// Storefront / integration API keys (hashed). Prefix shown in Admin only.
+model ApiKey {
+  id         String    @id @default(uuid())
+  businessId String    @map("business_id")
+  name       String
+  keyPrefix  String    @map("key_prefix")
+  keyHash    String    @unique @map("key_hash")
+  /// JSON array of scopes e.g. ["catalog:read","orders:write"]
+  scopes     Json      @default("[]")
+  lastUsedAt DateTime? @map("last_used_at")
+  revokedAt  DateTime? @map("revoked_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  business   Business  @relation(fields: [businessId], references: [id])
+
+  @@index([businessId])
+  @@map("api_keys")
+}
+
+/// Online (and future channel) orders — additive alongside POS Sale.
+model Order {
+  id             String       @id @default(uuid())
+  businessId     String       @map("business_id")
+  customerId     String?      @map("customer_id")
+  channel        OrderChannel @default(ONLINE)
+  status         OrderStatus  @default(PENDING)
+  orderNumber    String       @map("order_number")
+  idempotencyKey String?      @map("idempotency_key")
+  subtotalCents  Int          @map("subtotal_cents")
+  discountCents  Int          @default(0) @map("discount_cents")
+  taxCents       Int          @default(0) @map("tax_cents")
+  totalCents     Int          @map("total_cents")
+  currencyCode   String       @default("ZAR") @map("currency_code")
+  customerEmail  String?      @map("customer_email")
+  customerName   String?      @map("customer_name")
+  customerPhone  String?      @map("customer_phone")
+  notes          String?
+  metadata       Json?
+  confirmedAt    DateTime?    @map("confirmed_at")
+  cancelledAt    DateTime?    @map("cancelled_at")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @map("updated_at")
+
+  business       Business     @relation(fields: [businessId], references: [id])
+  customer       Customer?    @relation(fields: [customerId], references: [id])
+  items          OrderItem[]
+
+  @@unique([businessId, orderNumber])
+  @@unique([businessId, idempotencyKey])
+  @@index([businessId, createdAt])
+  @@index([businessId, status])
+  @@map("orders")
+}
+
+model OrderItem {
+  id             String  @id @default(uuid())
+  orderId        String  @map("order_id")
+  productId      String  @map("product_id")
+  productName    String  @map("product_name")
+  quantity       Decimal @db.Decimal(14, 3)
+  unitPriceCents Int     @map("unit_price_cents")
+  discountCents  Int     @default(0) @map("discount_cents")
+  totalCents     Int     @map("total_cents")
+
+  order          Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product        Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@map("order_items")
 }
 
 model Sale {

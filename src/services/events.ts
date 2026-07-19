@@ -12,7 +12,8 @@ export type DomainEvent =
   | { type: "stock.changed"; businessId: string; productId: string; quantityAfter: number }
   | { type: "purchase.received"; businessId: string; purchaseOrderId: string; orderNumber: string; userId?: string }
   | { type: "customer.created"; businessId: string; customerId: string; userId?: string }
-  | { type: "subscription.activated"; businessId: string; plan: string; userId?: string };
+  | { type: "subscription.activated"; businessId: string; plan: string; userId?: string }
+  | { type: "order.created"; businessId: string; orderId: string; orderNumber: string; userId?: string };
 
 type Handler = (event: DomainEvent) => void | Promise<void>;
 

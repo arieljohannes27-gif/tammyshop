@@ -45,3 +45,8 @@ next-env.d.ts
 # tunnels / local artifacts
 *.log
 
+.vercel
+.env
+.env.local
+.env.*.local
+!.env.example

@@ -54,6 +54,7 @@ export async function middleware(request: NextRequest) {
     PUBLIC_PATHS.includes(pathname) ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/billing/webhook") ||
+    pathname.startsWith("/api/v1") ||
     pathname.startsWith("/billing/");
 
   if (!authenticated && !isPublic && !pathname.startsWith("/api/auth")) {
