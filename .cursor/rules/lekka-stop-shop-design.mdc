@@ -1,0 +1,48 @@
+---
+description: Lekka Stop Shop storefront brand and UI design language
+globs: src/app/(storefront)/**/*,src/components/lekka/**/*,src/styles/lekka-tokens.css,docs/LEKKA-STOP-SHOP-DESIGN.md,public/brand/**
+alwaysApply: false
+---
+
+# Lekka Stop Shop Design Language
+
+Premium neighbourhood market — not a generic spaza UI. Experience quality = code quality.
+
+## Identity
+
+- Inspiration: real Westridge shop (bright red building, white wordmark). Do not redesign the building; translate its confidence into digital calm.
+- Hero asset: `public/brand/lekka-stop-shop-hero.png`
+- Full brief: `docs/LEKKA-STOP-SHOP-DESIGN.md`
+- Tokens: `src/styles/lekka-tokens.css` under `.lekka` scope
+- Do **not** restyle TammyShop Admin with Lekka red unless asked
+
+## Customer feeling
+
+Luxury neighbourhood market: trustworthy, calm, beautiful, expensive, easy. Customers should forget traditional convenience-store stigma.
+
+## Colour (red = accent only)
+
+- Brand red `#D0122B` — CTAs, key accents, never full-page floods
+- Warm white bg `#FAF7F2`, pure white cards `#FFFFFF`
+- Charcoal text `#1C1917`, warm grey `#78716C`
+- Fresh produce green `#3F6F4A` sparingly
+- Soft gold `#D4A017` only for light highlights (badge edge), not primary chrome
+
+## Layout & UI
+
+- Mobile-first, large touch targets, one-thumb checkout
+- Full-bleed hero on storefront home; brand is hero-level (not nav-only)
+- First viewport: brand + one headline + one support line + one CTA group + dominant image — no stats, schedules, promo chips, or floating badges on hero media
+- Product cards: large image, short copy, clear ZAR price, elegant add-to-cart, generous space (cards OK as interaction containers)
+- Nav: Apple-simple, sticky, large search, curated mega menus
+- Rounded corners, subtle shadows, soft 150–280ms motion — no flashy animation
+- Glass only on sticky nav/overlays when it improves clarity
+- No clutter: no pill clusters, icon rows, or dashboard energy on marketing surfaces
+
+## Photography
+
+Natural light, fresh produce, warm wood/textures, Babylonstoren-adjacent grocery lifestyle. Prefer real shop/produce imagery over abstract gradients as the main visual idea.
+
+## Typography
+
+Expressive fonts (DM Sans + Fraunces or equivalent). Avoid Inter/Roboto/Arial/system defaults. Minimal text; photography leads.

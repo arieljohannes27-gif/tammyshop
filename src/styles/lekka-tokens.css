@@ -1,0 +1,79 @@
+/**
+ * Lekka Stop Shop design tokens.
+ * Scope under `.lekka` so TammyShop Admin keeps its own theme.
+ * Source: Westridge shop exterior — red as accent on warm white.
+ */
+
+.lekka {
+  --lekka-red: #d0122b;
+  --lekka-red-deep: #a30e22;
+  --lekka-red-soft: rgba(208, 18, 43, 0.08);
+  --lekka-gold: #d4a017;
+  --lekka-bg: #faf7f2;
+  --lekka-surface: #ffffff;
+  --lekka-text: #1c1917;
+  --lekka-muted: #78716c;
+  --lekka-border: #e7e0d6;
+  --lekka-fresh: #3f6f4a;
+  --lekka-fresh-soft: rgba(63, 111, 74, 0.1);
+
+  --lekka-radius: 14px;
+  --lekka-radius-sm: 10px;
+  --lekka-radius-lg: 22px;
+
+  --lekka-shadow: 0 1px 2px rgba(28, 25, 23, 0.04), 0 8px 24px rgba(28, 25, 23, 0.06);
+  --lekka-shadow-lg: 0 4px 8px rgba(28, 25, 23, 0.04), 0 20px 40px rgba(28, 25, 23, 0.08);
+
+  --lekka-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --lekka-duration: 200ms;
+
+  --font-lekka-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-lekka-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+
+  background: var(--lekka-bg);
+  color: var(--lekka-text);
+  font-family: var(--font-lekka-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.lekka ::selection {
+  background: var(--lekka-red-soft);
+  color: var(--lekka-text);
+}
+
+.lekka-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 999px;
+  background: var(--lekka-red);
+  color: #fff;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: background var(--lekka-duration) var(--lekka-ease),
+    transform var(--lekka-duration) var(--lekka-ease);
+}
+
+.lekka-btn-primary:hover {
+  background: var(--lekka-red-deep);
+}
+
+.lekka-btn-primary:active {
+  transform: scale(0.98);
+}
+
+.lekka-card {
+  background: var(--lekka-surface);
+  border: 1px solid var(--lekka-border);
+  border-radius: var(--lekka-radius);
+  box-shadow: var(--lekka-shadow);
+}
+
+.lekka-glass {
+  background: rgba(250, 247, 242, 0.78);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(231, 224, 214, 0.85);
+}

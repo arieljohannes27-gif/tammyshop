@@ -52,6 +52,8 @@ export async function middleware(request: NextRequest) {
 
   const isPublic =
     PUBLIC_PATHS.includes(pathname) ||
+    pathname.startsWith("/shop") ||
+    pathname.startsWith("/api/storefront") ||
     pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/api/billing/webhook") ||
     pathname.startsWith("/api/v1") ||
