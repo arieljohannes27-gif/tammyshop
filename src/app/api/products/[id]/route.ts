@@ -1,36 +1,25 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requirePaidSession } from "@/lib/auth";
-import { writeAuditLog } from "@/services/audit.service";
-import { Decimal } from "@prisma/client/runtime/library";
-import { generateSku } from "@/lib/utils";
+import { authErrorResponse, requirePaidPermission } from "@/lib/auth";
+import {
+  duplicateProduct,
+  getProduct,
+  softDeleteProduct,
+  updateProduct,
+} from "@/services/catalog.service";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: Ctx) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("inventory.view");
     const { id } = await ctx.params;
-    const product = await prisma.product.findFirst({
-      where: { id, businessId: session.businessId, deletedAt: null },
-      include: { category: true, brand: true, unit: true, supplier: true, stockMovements: { orderBy: { createdAt: "desc" }, take: 30 } },
-    });
+    const product = await getProduct(session.businessId, id);
     if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    return NextResponse.json({
-      product: {
-        ...product,
-        quantity: Number(product.quantity),
-        minStock: Number(product.minStock),
-        maxStock: product.maxStock != null ? Number(product.maxStock) : null,
-        stockMovements: product.stockMovements.map((m) => ({
-          ...m,
-          quantity: Number(m.quantity),
-          quantityAfter: Number(m.quantityAfter),
-        })),
-      },
-    });
-  } catch {
+    return NextResponse.json({ product });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 }
@@ -60,68 +49,33 @@ const patchSchema = z.object({
 
 export async function PATCH(req: Request, ctx: Ctx) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("inventory");
     const { id } = await ctx.params;
     const body = patchSchema.parse(await req.json());
 
-    const existing = await prisma.product.findFirst({ where: { id, businessId: session.businessId, deletedAt: null } });
-    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-
     if (body.duplicate) {
-      const copy = await prisma.product.create({
-        data: {
-          businessId: session.businessId,
-          name: `${existing.name} (Copy)`,
-          description: existing.description,
-          sku: generateSku(existing.name),
-          barcode: null,
-          categoryId: existing.categoryId,
-          brandId: existing.brandId,
-          unitId: existing.unitId,
-          supplierId: existing.supplierId,
-          costPriceCents: existing.costPriceCents,
-          sellPriceCents: existing.sellPriceCents,
-          quantity: new Decimal(0),
-          minStock: existing.minStock,
-          maxStock: existing.maxStock,
-          location: existing.location,
-          notes: existing.notes,
-          imageUrl: existing.imageUrl,
-          vatInclusive: existing.vatInclusive,
-        },
+      const product = await duplicateProduct({
+        businessId: session.businessId,
+        userId: session.userId,
+        id,
       });
-      await writeAuditLog({ businessId: session.businessId, userId: session.userId, action: "CREATE", entityType: "product", entityId: copy.id, summary: `Duplicated ${existing.name}` });
-      return NextResponse.json({ product: copy });
+      return NextResponse.json({ product });
     }
 
-    const product = await prisma.product.update({
-      where: { id },
-      data: {
-        name: body.name,
-        description: body.description,
-        sku: body.sku,
-        barcode: body.barcode,
-        categoryId: body.categoryId,
-        brandId: body.brandId,
-        unitId: body.unitId,
-        supplierId: body.supplierId,
-        costPriceCents: body.costPriceCents,
-        sellPriceCents: body.sellPriceCents,
-        minStock: body.minStock != null ? new Decimal(body.minStock) : undefined,
-        maxStock: body.maxStock === null ? null : body.maxStock != null ? new Decimal(body.maxStock) : undefined,
-        location: body.location,
-        expiryDate: body.expiryDate === null ? null : body.expiryDate ? new Date(body.expiryDate) : undefined,
-        batchNumber: body.batchNumber,
-        notes: body.notes,
-        imageUrl: body.imageUrl,
-        isActive: body.isActive,
-        isArchived: body.isArchived,
-      },
+    const { duplicate: _d, ...data } = body;
+    const product = await updateProduct({
+      businessId: session.businessId,
+      userId: session.userId,
+      id,
+      data,
     });
-
-    await writeAuditLog({ businessId: session.businessId, userId: session.userId, action: "UPDATE", entityType: "product", entityId: id, summary: `Updated product ${product.name}` });
     return NextResponse.json({ product });
   } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    if (e instanceof Error && e.message === "NOT_FOUND") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     if (e instanceof z.ZodError) return NextResponse.json({ error: e.errors[0]?.message }, { status: 400 });
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
@@ -129,14 +83,20 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const session = await requirePaidSession();
+    const session = await requirePaidPermission("inventory");
     const { id } = await ctx.params;
-    const existing = await prisma.product.findFirst({ where: { id, businessId: session.businessId } });
-    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
-    await prisma.product.update({ where: { id }, data: { deletedAt: new Date(), isArchived: true, isActive: false } });
-    await writeAuditLog({ businessId: session.businessId, userId: session.userId, action: "DELETE", entityType: "product", entityId: id, summary: `Deleted product ${existing.name}` });
+    await softDeleteProduct({
+      businessId: session.businessId,
+      userId: session.userId,
+      id,
+    });
     return NextResponse.json({ ok: true });
-  } catch {
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    if (e instanceof Error && e.message === "NOT_FOUND") {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }

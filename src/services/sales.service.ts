@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { createStockMovementInTx } from "@/services/inventory.service";
 import { writeAuditLog } from "@/services/audit.service";
+import { emitDomainEvent } from "@/services/events";
+import { resolveCouponDiscount } from "@/services/pricing.service";
+import "@/services/notification.service";
 
 export type SaleLineInput = {
   productId: string;
@@ -69,31 +72,19 @@ export async function createSale(input: CreateSaleInput) {
     let couponDiscount = 0;
     let couponCode: string | null = null;
     if (input.couponCode?.trim()) {
-      const code = input.couponCode.trim().toUpperCase();
-      const coupon = await tx.coupon.findFirst({
-        where: {
-          businessId: input.businessId,
-          code: { equals: code, mode: "insensitive" },
-          isActive: true,
-        },
+      const resolved = await resolveCouponDiscount({
+        businessId: input.businessId,
+        code: input.couponCode,
+        subtotalCents: Math.round(subtotal),
       });
-      if (!coupon) throw new Error("COUPON_INVALID");
-      if (coupon.expiresAt && coupon.expiresAt < new Date()) throw new Error("COUPON_EXPIRED");
-      if (coupon.maxUses != null && coupon.usedCount >= coupon.maxUses) throw new Error("COUPON_EXHAUSTED");
-      if (coupon.minPurchaseCents != null && subtotal < coupon.minPurchaseCents) {
-        throw new Error("COUPON_MIN_PURCHASE");
+      if (resolved) {
+        couponDiscount = resolved.discountCents;
+        couponCode = resolved.code;
+        await tx.coupon.update({
+          where: { id: resolved.coupon.id },
+          data: { usedCount: { increment: 1 } },
+        });
       }
-      if (coupon.discountPercent != null) {
-        couponDiscount += Math.round(subtotal * (Number(coupon.discountPercent) / 100));
-      }
-      if (coupon.discountCents != null) {
-        couponDiscount += coupon.discountCents;
-      }
-      couponCode = coupon.code;
-      await tx.coupon.update({
-        where: { id: coupon.id },
-        data: { usedCount: { increment: 1 } },
-      });
     }
 
     const pctDiscount = Math.round(subtotal * (discountPercent / 100));
@@ -179,21 +170,16 @@ export async function createSale(input: CreateSaleInput) {
       summary: `Sale ${sale.invoiceNumber} · R${(total / 100).toFixed(2)}`,
     });
 
-    const settings = await tx.businessSetting.findUnique({
-      where: { businessId: input.businessId },
+    return sale;
+  }).then(async (sale) => {
+    await emitDomainEvent({
+      type: "sale.completed",
+      businessId: input.businessId,
+      saleId: sale.id,
+      totalCents: sale.totalCents,
+      invoiceNumber: sale.invoiceNumber,
+      userId: input.userId,
     });
-    if (settings && total >= settings.largeSaleThresholdCents) {
-      await tx.notification.create({
-        data: {
-          businessId: input.businessId,
-          type: "LARGE_SALE",
-          title: "Large sale recorded",
-          message: `${sale.invoiceNumber} for R${(total / 100).toFixed(2)}`,
-          link: `/sales/${sale.id}`,
-        },
-      });
-    }
-
     return sale;
   });
 }
@@ -251,6 +237,14 @@ export async function refundSale(params: {
       metadata: { full: params.full ?? true },
     });
 
+    return updated;
+  }).then(async (updated) => {
+    await emitDomainEvent({
+      type: "sale.refunded",
+      businessId: params.businessId,
+      saleId: updated.id,
+      userId: params.userId,
+    });
     return updated;
   });
 }

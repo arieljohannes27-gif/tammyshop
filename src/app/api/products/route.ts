@@ -1,45 +1,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { authErrorResponse, getBusinessPlan, requirePaidPermission } from "@/lib/auth";
-import { generateSku } from "@/lib/utils";
-import { writeAuditLog } from "@/services/audit.service";
-import { Decimal } from "@prisma/client/runtime/library";
+import { countActiveProducts, createProduct, listProducts } from "@/services/catalog.service";
 
 export async function GET(req: Request) {
   try {
     const session = await requirePaidPermission("inventory.view");
     const { searchParams } = new URL(req.url);
-    const q = searchParams.get("q")?.trim();
-    const includeArchived = searchParams.get("archived") === "1";
-
-    const products = await prisma.product.findMany({
-      where: {
-        businessId: session.businessId,
-        deletedAt: null,
-        ...(includeArchived ? {} : { isArchived: false }),
-        ...(q
-          ? {
-              OR: [
-                { name: { contains: q, mode: "insensitive" } },
-                { sku: { contains: q, mode: "insensitive" } },
-                { barcode: { contains: q, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-      },
-      include: { category: true, brand: true, unit: true, supplier: true },
-      orderBy: { name: "asc" },
+    const products = await listProducts({
+      businessId: session.businessId,
+      q: searchParams.get("q")?.trim() || undefined,
+      includeArchived: searchParams.get("archived") === "1",
     });
-
-    return NextResponse.json({
-      products: products.map((p) => ({
-        ...p,
-        quantity: Number(p.quantity),
-        minStock: Number(p.minStock),
-        maxStock: p.maxStock != null ? Number(p.maxStock) : null,
-      })),
-    });
+    return NextResponse.json({ products });
   } catch (e) {
     const mapped = authErrorResponse(e);
     if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
@@ -76,49 +49,19 @@ export async function POST(req: Request) {
     const plan = await getBusinessPlan(session.businessId);
 
     if (plan.maxProducts != null) {
-      const count = await prisma.product.count({
-        where: { businessId: session.businessId, deletedAt: null, isArchived: false },
-      });
+      const count = await countActiveProducts(session.businessId);
       if (count >= plan.maxProducts) {
         return NextResponse.json(
           { error: `Product limit reached (${plan.maxProducts}). Upgrade your plan.` },
-          { status: 402 }
+          { status: 402 },
         );
       }
     }
 
-    const product = await prisma.product.create({
-      data: {
-        businessId: session.businessId,
-        name: body.name,
-        description: body.description,
-        sku: body.sku || generateSku(body.name),
-        barcode: body.barcode || null,
-        categoryId: body.categoryId || null,
-        brandId: body.brandId || null,
-        unitId: body.unitId || null,
-        supplierId: body.supplierId || null,
-        costPriceCents: body.costPriceCents,
-        sellPriceCents: body.sellPriceCents,
-        quantity: new Decimal(body.quantity),
-        minStock: new Decimal(body.minStock),
-        maxStock: body.maxStock != null ? new Decimal(body.maxStock) : null,
-        location: body.location,
-        expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
-        batchNumber: body.batchNumber,
-        notes: body.notes,
-        imageUrl: body.imageUrl,
-        vatInclusive: body.vatInclusive ?? true,
-      },
-    });
-
-    await writeAuditLog({
+    const product = await createProduct({
       businessId: session.businessId,
       userId: session.userId,
-      action: "CREATE",
-      entityType: "product",
-      entityId: product.id,
-      summary: `Created product ${product.name}`,
+      ...body,
     });
 
     return NextResponse.json({ product }, { status: 201 });

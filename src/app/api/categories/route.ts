@@ -1,21 +1,36 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requirePaidSession } from "@/lib/auth";
+import { authErrorResponse, requirePaidPermission } from "@/lib/auth";
+import { createCategory, listCategories } from "@/services/catalog.service";
 
 export async function GET() {
-  const session = await requirePaidSession();
-  const categories = await prisma.category.findMany({
-    where: { businessId: session.businessId, deletedAt: null },
-    include: { _count: { select: { products: true } } },
-    orderBy: { sortOrder: "asc" },
-  });
-  return NextResponse.json({ categories });
+  try {
+    const session = await requirePaidPermission("inventory.view");
+    const categories = await listCategories(session.businessId);
+    return NextResponse.json({ categories });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 }
 
 export async function POST(req: Request) {
-  const session = await requirePaidSession();
-  const body = z.object({ name: z.string().min(1), description: z.string().optional(), color: z.string().optional() }).parse(await req.json());
-  const category = await prisma.category.create({ data: { businessId: session.businessId, ...body } });
-  return NextResponse.json({ category }, { status: 201 });
+  try {
+    const session = await requirePaidPermission("inventory");
+    const body = z
+      .object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        color: z.string().optional(),
+      })
+      .parse(await req.json());
+    const category = await createCategory(session.businessId, body);
+    return NextResponse.json({ category }, { status: 201 });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    if (e instanceof z.ZodError) return NextResponse.json({ error: e.errors[0]?.message }, { status: 400 });
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
 }

@@ -1,35 +1,35 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requirePaidSession } from "@/lib/auth";
+import { authErrorResponse, requirePaidPermission } from "@/lib/auth";
+import { listNotifications, markNotificationsRead } from "@/services/notification.service";
 
 export async function GET() {
-  const session = await requirePaidSession();
-  const notifications = await prisma.notification.findMany({
-    where: {
+  try {
+    const session = await requirePaidPermission("notifications");
+    const notifications = await listNotifications({
       businessId: session.businessId,
-      OR: [{ userId: null }, { userId: session.userId }],
-    },
-    orderBy: { createdAt: "desc" },
-    take: 50,
-  });
-  return NextResponse.json({ notifications });
+      userId: session.userId,
+    });
+    return NextResponse.json({ notifications });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 }
 
 export async function PATCH(req: Request) {
-  const session = await requirePaidSession();
-  const body = await req.json();
-  if (body.markAll) {
-    await prisma.notification.updateMany({
-      where: { businessId: session.businessId, isRead: false },
-      data: { isRead: true },
+  try {
+    const session = await requirePaidPermission("notifications");
+    const body = await req.json();
+    await markNotificationsRead({
+      businessId: session.businessId,
+      id: body.id,
+      markAll: Boolean(body.markAll),
     });
     return NextResponse.json({ ok: true });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
-  if (body.id) {
-    await prisma.notification.updateMany({
-      where: { id: body.id, businessId: session.businessId },
-      data: { isRead: true },
-    });
-  }
-  return NextResponse.json({ ok: true });
 }

@@ -1,21 +1,30 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requirePaidSession } from "@/lib/auth";
+import { authErrorResponse, requirePaidPermission } from "@/lib/auth";
+import { createBrand, listBrands } from "@/services/catalog.service";
 
 export async function GET() {
-  const session = await requirePaidSession();
-  const brands = await prisma.brand.findMany({
-    where: { businessId: session.businessId, deletedAt: null },
-    include: { _count: { select: { products: true } } },
-    orderBy: { name: "asc" },
-  });
-  return NextResponse.json({ brands });
+  try {
+    const session = await requirePaidPermission("inventory.view");
+    const brands = await listBrands(session.businessId);
+    return NextResponse.json({ brands });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 }
 
 export async function POST(req: Request) {
-  const session = await requirePaidSession();
-  const body = z.object({ name: z.string().min(1) }).parse(await req.json());
-  const brand = await prisma.brand.create({ data: { businessId: session.businessId, name: body.name } });
-  return NextResponse.json({ brand }, { status: 201 });
+  try {
+    const session = await requirePaidPermission("inventory");
+    const body = z.object({ name: z.string().min(1) }).parse(await req.json());
+    const brand = await createBrand(session.businessId, body);
+    return NextResponse.json({ brand }, { status: 201 });
+  } catch (e) {
+    const mapped = authErrorResponse(e);
+    if (mapped) return NextResponse.json({ error: mapped.error }, { status: mapped.status });
+    if (e instanceof z.ZodError) return NextResponse.json({ error: e.errors[0]?.message }, { status: 400 });
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
 }

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma, StockMovementType } from "@prisma/client";
 import { Decimal } from "@prisma/client/runtime/library";
 import { writeAuditLog } from "@/services/audit.service";
+import { emitDomainEvent } from "@/services/events";
 
 type DbClient = Prisma.TransactionClient | typeof prisma;
 
@@ -88,7 +89,7 @@ async function applyStockMovement(
   return { product: updated, movement };
 }
 
-/** Standalone stock movement (own transaction). */
+/** Standalone stock movement (own transaction). Emits stock.changed after commit. */
 export async function createStockMovement(params: {
   businessId: string;
   productId: string;
@@ -101,7 +102,14 @@ export async function createStockMovement(params: {
   toLocation?: string;
   actorUserId?: string;
 }) {
-  return prisma.$transaction((tx) => applyStockMovement(tx, params));
+  const result = await prisma.$transaction((tx) => applyStockMovement(tx, params));
+  await emitDomainEvent({
+    type: "stock.changed",
+    businessId: params.businessId,
+    productId: params.productId,
+    quantityAfter: Number(result.product.quantity),
+  });
+  return result;
 }
 
 /** Stock movement inside an existing transaction (atomic with sales/refunds). */

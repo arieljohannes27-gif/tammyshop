@@ -5,7 +5,8 @@ import {
   validatePayFastItn,
   verifyPayFastItnSignature,
 } from "@/lib/payfast";
-import { writeAuditLog } from "@/services/audit.service";
+import { activateSubscription } from "@/services/billing.service";
+import "@/services/notification.service";
 
 function formToRecord(form: FormData): Record<string, string> {
   const data: Record<string, string> = {};
@@ -53,24 +54,11 @@ export async function POST(req: Request) {
     const plan = data.custom_str2 as "STARTER" | "ADVANCED" | undefined;
 
     if (status === "COMPLETE" && businessId && (plan === "STARTER" || plan === "ADVANCED")) {
-      await prisma.subscription.update({
-        where: { businessId },
-        data: {
-          plan,
-          status: "ACTIVE",
-          stripeCustomerId: data.pf_payment_id || data.m_payment_id || undefined,
-          stripeSubscriptionId: data.token || undefined,
-          currentPeriodStart: new Date(),
-          currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-          cancelledAt: null,
-        },
-      });
-      await writeAuditLog({
+      await activateSubscription({
         businessId,
-        action: "BILLING",
-        entityType: "subscription",
-        summary: `Activated ${plan} via PayFast`,
-        metadata: { pf_payment_id: data.pf_payment_id, token: data.token },
+        plan,
+        stripeCustomerId: data.pf_payment_id || data.m_payment_id || undefined,
+        stripeSubscriptionId: data.token || undefined,
       });
     }
 

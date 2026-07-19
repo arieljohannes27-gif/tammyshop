@@ -149,6 +149,7 @@ export function hasPermission(role: UserRole, action: string): boolean {
       "dashboard",
       "inventory.view",
       "sales",
+      "customers",
       "customers.view",
       "notifications",
       "stock.view",
